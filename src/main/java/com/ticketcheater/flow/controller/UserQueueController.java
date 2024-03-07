@@ -1,6 +1,6 @@
 package com.ticketcheater.flow.controller;
 
-import com.ticketcheater.flow.dto.*;
+import com.ticketcheater.flow.dto.response.*;
 import com.ticketcheater.flow.service.UserQueueService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpCookie;

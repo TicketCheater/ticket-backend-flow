@@ -1,4 +1,4 @@
-package com.ticketcheater.flow.dto;
+package com.ticketcheater.flow.dto.response;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;

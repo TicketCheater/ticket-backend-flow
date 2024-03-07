@@ -1,4 +1,4 @@
-package com.ticketcheater.flow.dto;
+package com.ticketcheater.flow.dto.response;
 
 public record Response<T>(String resultCode, T result) {
 
