@@ -7,6 +7,5 @@ import lombok.Getter;
 @AllArgsConstructor
 public class WaitingResponse {
     private String queue;
-    private Long userId;
     private Long rank;
 }

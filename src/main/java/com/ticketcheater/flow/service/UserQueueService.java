@@ -18,38 +18,38 @@ import java.time.Instant;
 @RequiredArgsConstructor
 public class UserQueueService {
 
-    private final ReactiveRedisTemplate<String, String> reactiveRedisTemplate;
+    private final ReactiveRedisTemplate<String, String> reactiveFlowRedisTemplate;
 
     private static final String USER_QUEUE_WAIT_KEY = "users:queue:%s:wait";
     private static final String USER_QUEUE_PROCEED_KEY = "users:queue:%s:proceed";
     private static final Long ALLOW_COUNT = 100L;
 
-    public Mono<Long> registerWaitQueue(String queue, Long userId) {
+    public Mono<Long> registerWaitQueue(String queue, String username) {
         long unixTimestamp = Instant.now().getEpochSecond();
-        return reactiveRedisTemplate.opsForZSet().add(USER_QUEUE_WAIT_KEY.formatted(queue), userId.toString(), unixTimestamp)
+        return reactiveFlowRedisTemplate.opsForZSet().add(USER_QUEUE_WAIT_KEY.formatted(queue), username, unixTimestamp)
                 .filter(i -> i)
-                .switchIfEmpty(Mono.error(() -> new TicketApplicationException(ErrorCode.QUEUE_ALREADY_REGISTERED_USER, String.format("%d is already registered", userId))))
-                .flatMap(i -> reactiveRedisTemplate.opsForZSet().rank(USER_QUEUE_WAIT_KEY.formatted(queue), userId.toString()))
+                .switchIfEmpty(Mono.error(() -> new TicketApplicationException(ErrorCode.QUEUE_ALREADY_REGISTERED_USER, String.format("%s is already registered", username))))
+                .flatMap(i -> reactiveFlowRedisTemplate.opsForZSet().rank(USER_QUEUE_WAIT_KEY.formatted(queue), username))
                 .map(i -> i>=0 ? i+1: i);
     }
 
     public Mono<Long> allowUser(String queue) {
-        return reactiveRedisTemplate.opsForZSet().popMin(USER_QUEUE_WAIT_KEY.formatted(queue), ALLOW_COUNT)
-                .flatMap(member -> reactiveRedisTemplate.opsForZSet().add(USER_QUEUE_PROCEED_KEY.formatted(queue), member.getValue(), Instant.now().getEpochSecond()))
+        return reactiveFlowRedisTemplate.opsForZSet().popMin(USER_QUEUE_WAIT_KEY.formatted(queue), ALLOW_COUNT)
+                .flatMap(member -> reactiveFlowRedisTemplate.opsForZSet().add(USER_QUEUE_PROCEED_KEY.formatted(queue), member.getValue(), Instant.now().getEpochSecond()))
                 .count();
     }
 
-    public Mono<Long> getRank(String queue, Long userId) {
-        return reactiveRedisTemplate.opsForZSet().rank(USER_QUEUE_WAIT_KEY.formatted(queue), userId.toString())
+    public Mono<Long> getRank(String queue, String username) {
+        return reactiveFlowRedisTemplate.opsForZSet().rank(USER_QUEUE_WAIT_KEY.formatted(queue), username)
                 .defaultIfEmpty(-1L)
                 .map(rank -> rank>=0 ? rank+1: rank);
     }
 
-    public Mono<String> generateToken(String queue, Long userId) {
+    public Mono<String> generateToken(String queue, String username) {
         MessageDigest digest;
         try {
             digest = MessageDigest.getInstance("SHA-256");
-            String input = "user-queue-%s-%d".formatted(queue, userId);
+            String input = "user-queue-%s-%s".formatted(queue, username);
             byte[] encodedHash = digest.digest(input.getBytes(StandardCharsets.UTF_8));
 
             StringBuilder hexString = new StringBuilder();
@@ -63,8 +63,8 @@ public class UserQueueService {
         }
     }
 
-    public Mono<Boolean> isAllowedByToken(String queue, Long userId, String token) {
-        return this.generateToken(queue, userId)
+    public Mono<Boolean> isAllowedByToken(String queue, String username, String token) {
+        return this.generateToken(queue, username)
                 .filter(gen -> gen.equalsIgnoreCase(token))
                 .map(i -> true)
                 .defaultIfEmpty(false);
