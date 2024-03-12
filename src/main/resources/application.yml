@@ -3,4 +3,10 @@ spring:
   data:
     redis:
       host: 127.0.0.1
-      port: 6380
+      flow:
+        port: 6380
+      auth:
+        port: 6381
+
+jwt:
+  secret-key: ${JWT_SECRET_KEY}
