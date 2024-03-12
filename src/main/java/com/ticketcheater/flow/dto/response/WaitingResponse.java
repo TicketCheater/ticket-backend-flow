@@ -1,4 +1,4 @@
-package com.ticketcheater.flow.dto;
+package com.ticketcheater.flow.dto.response;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -7,6 +7,5 @@ import lombok.Getter;
 @AllArgsConstructor
 public class WaitingResponse {
     private String queue;
-    private Long userId;
     private Long rank;
 }

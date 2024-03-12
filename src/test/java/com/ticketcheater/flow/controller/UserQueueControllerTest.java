@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.reactive.server.WebTestClient;
 import reactor.core.publisher.Mono;
 
@@ -26,15 +27,17 @@ class UserQueueControllerTest {
 
     @DisplayName("올바른 토큰을 가진 유저가 대기 큐에 있는지를 요청하면 참을 반환한다")
     @Test
+    @WithMockUser(username = "100")
     void givenUserWithValidToken_whenRequesting_thenReturnsTrue() {
         String queue = "default";
-        Long userId = 100L;
+        String username = "100";
         String token = "d333a5d4eb24f3f5cdd767d79b8c01aad3cd73d3537c70dec430455d37afe4b8";
 
-        when(userQueueService.isAllowedByToken(queue, userId, token)).thenReturn(Mono.just(true));
+        when(userQueueService.isAllowedByToken(queue, username, token)).thenReturn(Mono.just(true));
 
-        webTestClient.get()
-                .uri(String.format("flow/allowed?queue=%s&user_id=%d&token=%s", queue, userId, token))
+        webTestClient
+                .get()
+                .uri(String.format("/flow/allowed?queue=%s&token=%s", queue, token))
                 .accept(MediaType.APPLICATION_JSON)
                 .exchange()
                 .expectStatus().isOk()
@@ -45,15 +48,16 @@ class UserQueueControllerTest {
 
     @DisplayName("올바르지 않은 토큰을 가진 유저가 대기 큐에 있는지를 요청하면 거짓을 반환한다")
     @Test
+    @WithMockUser(username = "100")
     void givenUserWithInValidToken_whenRequesting_thenReturnsFalse() {
         String queue = "default";
-        Long userId = 100L;
+        String username = "100";
         String token = "d333a5d4eb24f3f5cdd767d79b8c01aad3cd73d3537c70dec430455d37afe4b8";
 
-        when(userQueueService.isAllowedByToken(queue, userId, token)).thenReturn(Mono.just(false));
+        when(userQueueService.isAllowedByToken(queue, username, token)).thenReturn(Mono.just(false));
 
         webTestClient.get()
-                .uri(String.format("flow/allowed?queue=%s&user_id=%d&token=%s", queue, userId, token))
+                .uri(String.format("/flow/allowed?queue=%s&token=%s", queue, token))
                 .accept(MediaType.APPLICATION_JSON)
                 .exchange()
                 .expectStatus().isOk()
@@ -64,14 +68,15 @@ class UserQueueControllerTest {
 
     @DisplayName("대기 큐에 있는 유저들의 우선순위를 정상적으로 반환한다")
     @Test
+    @WithMockUser(username = "100")
     void givenUserRegisteredInQueue_whenRequesting_thenReturnsRank() {
         String queue = "default";
-        Long userId = 100L;
+        String username = "100";
 
-        when(userQueueService.getRank(queue, userId)).thenReturn(Mono.just(1L));
+        when(userQueueService.getRank(queue, username)).thenReturn(Mono.just(1L));
 
         webTestClient.get()
-                .uri(String.format("/flow/rank?queue=%s&user_id=%d", queue, userId))
+                .uri(String.format("/flow/rank?queue=%s", queue))
                 .accept(MediaType.APPLICATION_JSON)
                 .exchange()
                 .expectStatus().isOk()
@@ -82,14 +87,15 @@ class UserQueueControllerTest {
 
     @DisplayName("대기 큐에 없는 유저들의 우선순위를 -1로 반환한다")
     @Test
+    @WithMockUser(username = "100")
     void givenUserNotRegisteredInQueue_whenRequesting_thenReturnsMinusOne() {
         String queue = "default";
-        Long userId = 100L;
+        String username = "100";
 
-        when(userQueueService.getRank(queue, userId)).thenReturn(Mono.just(-1L));
+        when(userQueueService.getRank(queue, username)).thenReturn(Mono.just(-1L));
 
         webTestClient.get()
-                .uri(String.format("/flow/rank?queue=%s&user_id=%d", queue, userId))
+                .uri(String.format("/flow/rank?queue=%s", queue))
                 .accept(MediaType.APPLICATION_JSON)
                 .exchange()
                 .expectStatus().isOk()
@@ -100,14 +106,15 @@ class UserQueueControllerTest {
 
     @DisplayName("토큰을 정상적으로 반환한다")
     @Test
+    @WithMockUser(username = "100")
     void givenUser_whenRequesting_thenReturnsToken() {
         String queue = "default";
-        Long userId = 100L;
+        String username = "100";
 
-        when(userQueueService.generateToken(queue, userId)).thenReturn(Mono.just("token"));
+        when(userQueueService.generateToken(queue, username)).thenReturn(Mono.just("token"));
 
         webTestClient.get()
-                .uri(String.format("/flow/touch?queue=%s&user_id=%d", queue, userId))
+                .uri(String.format("/flow/touch?queue=%s", queue))
                 .accept(MediaType.APPLICATION_JSON)
                 .exchange()
                 .expectStatus().isOk()

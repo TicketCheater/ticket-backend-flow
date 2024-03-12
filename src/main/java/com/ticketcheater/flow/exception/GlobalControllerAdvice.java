@@ -1,6 +1,6 @@
 package com.ticketcheater.flow.exception;
 
-import com.ticketcheater.flow.dto.Response;
+import com.ticketcheater.flow.dto.response.Response;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
