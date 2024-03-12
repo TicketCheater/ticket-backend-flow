@@ -21,26 +21,26 @@ class UserQueueServiceTest {
     UserQueueService sut;
 
     @Autowired
-    ReactiveRedisTemplate<String, String> reactiveRedisTemplate;
+    ReactiveRedisTemplate<String, String> reactiveFlowRedisTemplate;
 
     @BeforeEach
     void beforeEach() {
-        ReactiveRedisConnection redisConnection = reactiveRedisTemplate.getConnectionFactory().getReactiveConnection();
+        ReactiveRedisConnection redisConnection = reactiveFlowRedisTemplate.getConnectionFactory().getReactiveConnection();
         redisConnection.serverCommands().flushAll().subscribe();
     }
 
     @DisplayName("대기 큐에 정상적으로 등록한다")
     @Test
     void registerWaitQueue() {
-        StepVerifier.create(sut.registerWaitQueue("default", 100L))
+        StepVerifier.create(sut.registerWaitQueue("default", "100"))
                 .expectNext(1L)
                 .verifyComplete();
 
-        StepVerifier.create(sut.registerWaitQueue("default", 101L))
+        StepVerifier.create(sut.registerWaitQueue("default", "101"))
                 .expectNext(2L)
                 .verifyComplete();
 
-        StepVerifier.create(sut.registerWaitQueue("default", 102L))
+        StepVerifier.create(sut.registerWaitQueue("default", "102"))
                 .expectNext(3L)
                 .verifyComplete();
     }
@@ -48,11 +48,11 @@ class UserQueueServiceTest {
     @DisplayName("이미 대기 큐에 있으면 오류를 내뱉는다")
     @Test
     void alreadyRegisterWaitQueue() {
-        StepVerifier.create(sut.registerWaitQueue("default", 100L))
+        StepVerifier.create(sut.registerWaitQueue("default", "100"))
                 .expectNext(1L)
                 .verifyComplete();
 
-        StepVerifier.create(sut.registerWaitQueue("default", 100L))
+        StepVerifier.create(sut.registerWaitQueue("default", "100"))
                 .expectError(TicketApplicationException.class)
                 .verify();
     }
@@ -69,9 +69,9 @@ class UserQueueServiceTest {
     @Test
     void allowUser() {
         StepVerifier.create(
-                        sut.registerWaitQueue("default", 100L)
-                                .then(sut.registerWaitQueue("default", 101L))
-                                .then(sut.registerWaitQueue("default", 102L))
+                        sut.registerWaitQueue("default", "100")
+                                .then(sut.registerWaitQueue("default", "101"))
+                                .then(sut.registerWaitQueue("default", "102"))
                                 .then(sut.allowUser("default")))
                 .expectNext(3L)
                 .verifyComplete();
@@ -81,11 +81,11 @@ class UserQueueServiceTest {
     @Test
     void allowUserAfterRegisterWaitQueue() {
         StepVerifier.create(
-                        sut.registerWaitQueue("default", 100L)
-                                .then(sut.registerWaitQueue("default", 101L))
-                                .then(sut.registerWaitQueue("default", 102L))
+                        sut.registerWaitQueue("default", "100")
+                                .then(sut.registerWaitQueue("default", "101"))
+                                .then(sut.registerWaitQueue("default", "102"))
                                 .then(sut.allowUser("default"))
-                                .then(sut.registerWaitQueue("default", 200L)))
+                                .then(sut.registerWaitQueue("default", "200")))
                 .expectNext(1L)
                 .verifyComplete();
     }
@@ -93,8 +93,8 @@ class UserQueueServiceTest {
     @DisplayName("대기 큐에 있는 유저들의 우선순위를 정상적으로 반환한다")
     @Test
     void getRank() {
-        StepVerifier.create(sut.registerWaitQueue("default", 100L)
-                        .then(sut.getRank("default", 100L)))
+        StepVerifier.create(sut.registerWaitQueue("default", "100")
+                        .then(sut.getRank("default", "100")))
                 .expectNext(1L)
                 .verifyComplete();
     }
@@ -102,7 +102,7 @@ class UserQueueServiceTest {
     @DisplayName("대기 큐에 없는 유저들의 우선순위를 -1로 반환한다")
     @Test
     void emptyRank() {
-        StepVerifier.create(sut.getRank("default", 100L))
+        StepVerifier.create(sut.getRank("default", "100"))
                 .expectNext(-1L)
                 .verifyComplete();
     }
@@ -110,7 +110,7 @@ class UserQueueServiceTest {
     @DisplayName("올바른 토큰을 가진 유저가 대기 큐에 있는지를 요청하면 참을 반환한다")
     @Test
     void isAllowedByToken() {
-        StepVerifier.create(sut.isAllowedByToken("default", 100L, "d333a5d4eb24f3f5cdd767d79b8c01aad3cd73d3537c70dec430455d37afe4b8"))
+        StepVerifier.create(sut.isAllowedByToken("default", "100", "d333a5d4eb24f3f5cdd767d79b8c01aad3cd73d3537c70dec430455d37afe4b8"))
                 .expectNext(true)
                 .verifyComplete();
     }
@@ -118,7 +118,7 @@ class UserQueueServiceTest {
     @DisplayName("올바르지 않은 토큰을 가진 유저가 대기 큐에 있는지를 요청하면 거짓을 반환한다")
     @Test
     void isNotAllowedByToken() {
-        StepVerifier.create(sut.isAllowedByToken("default", 100L, ""))
+        StepVerifier.create(sut.isAllowedByToken("default", "100", ""))
                 .expectNext(false)
                 .verifyComplete();
     }
@@ -126,7 +126,7 @@ class UserQueueServiceTest {
     @DisplayName("토큰을 정상적으로 반환한다")
     @Test
     void generateToken() {
-        StepVerifier.create(sut.generateToken("default", 100L))
+        StepVerifier.create(sut.generateToken("default", "100"))
                 .expectNext("d333a5d4eb24f3f5cdd767d79b8c01aad3cd73d3537c70dec430455d37afe4b8")
                 .verifyComplete();
     }
